@@ -505,20 +505,16 @@ setup_stack (void **esp, char *file_name)
   // TODO: macros
   char *copy = malloc(strlen(file_name) + 1);
   strlcpy(copy, file_name, strlen(file_name) + 1);
-  // TODO: for -> while
-  for (token = strtok_r(copy, " ", &save_ptr);
-      token != NULL;
-      token = strtok_r(NULL, " ", &save_ptr))
+  for_str(token, copy, " ", &save_ptr)
     argc++;
 
   int *argv = calloc(argc, sizeof(int));
-  // TODO: for -> while
-  for (token = strtok_r(file_name, " ", &save_ptr), i = 0;
-      token != NULL;
-      token = strtok_r(NULL, " ", &save_ptr), i++) {
+  i = 0;
+  for_str(token, file_name, " ", &save_ptr) {
     *esp -= strlen(token) + 1;
     memcpy(*esp, token, strlen(token) + 1);
     argv[i] = *esp;
+    i++;
   }
 
   while ((int)*esp % 4 != 0) {
