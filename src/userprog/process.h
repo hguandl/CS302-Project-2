@@ -10,14 +10,19 @@ int process_wait (tid_t);
 void process_exit (void);
 void process_activate (void);
 
+/* For each substring splitted by seperator. */
 #define for_str(elem, str, sep, last) \
     for ((elem) = strtok_r((str), (sep), (last)); \
         (elem) != NULL; \
         (elem) = strtok_r(NULL, (sep), (last)))
 
+/* Make a deep copy of string. */
 char *strcpy2(const char *src);
 
-void push_stack_int(void **esp, int val);
+/* Push one byte into the stack. */
 void push_stack_char(void **esp, char val);
+
+/* Push four bytes into the stack. */
+void push_stack_int(void **esp, int val);
 
 #endif /* userprog/process.h */

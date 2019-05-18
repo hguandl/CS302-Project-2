@@ -513,18 +513,24 @@ setup_stack (void **esp, char *file_name)
     i++;
   }
 
+  /* Align to 4 bytes. */
   while ((int)*esp % 4 != 0)
     push_stack_char(esp, 0);
 
+  /* End. */
   push_stack_int(esp, 0);
 
+  /* Push arguments. */
   for (i = argc - 1; i >= 0; i--)
     push_stack_int(esp, argv[i]);
 
+  /* Push seperator. */
   push_stack_int(esp, (int)*esp);
 
+  /* Push arguments count. */
   push_stack_int(esp, argc);
 
+  /* Begin. */
   push_stack_int(esp, 0);
 
   free(copy);
