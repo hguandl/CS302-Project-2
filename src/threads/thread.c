@@ -92,6 +92,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  lock_init (&filesys_lock);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -171,6 +172,7 @@ thread_create (const char *name, int priority,
   struct switch_entry_frame *ef;
   struct switch_threads_frame *sf;
   tid_t tid;
+  enum intr_level old_level;
 
   ASSERT (function != NULL);
 
@@ -182,6 +184,15 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+
+  /* Handle fork() syscall. */
+  struct child *c = malloc(sizeof(*c));
+  c->tid = tid;
+  c->exit_error = t->exit_error;
+  c->used = false;
+  list_push_back(&running_thread()->children, &c->elem);
+
+  old_level = intr_disable();
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -197,6 +208,7 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+  intr_set_level(old_level);
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -284,6 +296,12 @@ thread_exit (void)
 
 #ifdef USERPROG
   process_exit ();
+  while (!list_empty(&thread_current()->children)) {
+    struct process_file *f = list_entry(
+      list_pop_front(&thread_current()->children),
+      struct child, elem);
+      free(f);
+  }
 #endif
 
   /* Remove thread from all threads list, set our status to dying,
@@ -464,6 +482,14 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
+  list_init(&t->children);
+  t->parent = running_thread();
+  list_init(&t->files);
+  t->fd_count = 2;
+  t->exit_error = -100;
+  sema_init(&t->child_lock, 0);
+  t->waiting = 0;
+  t->self = NULL;
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);
@@ -582,3 +608,20 @@ allocate_tid (void)
 /* Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
+
+void acquire_filesys_lock()
+{
+  lock_acquire(&filesys_lock);
+}
+
+void release_filesys_lock()
+{
+  lock_release(&filesys_lock);
+}
+
+bool cmp_wktime(struct list_elem *first, struct list_elem *second, void *aux)
+{
+  struct thread *a = list_entry(first, struct thread, elem);
+  struct thread *b = list_entry(second, struct thread, elem);
+  return a->wktime < b->wktime;
+}

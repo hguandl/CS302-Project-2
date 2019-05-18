@@ -5,6 +5,7 @@
 #include <list.h>
 #include <stdint.h>
 #include "fixed_point.h"
+#include "synch.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -94,6 +95,30 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
+    /* Shared between thread.c and devices/clock.c. */
+    int wktime;                         /* Time to wake up. */
+
+    /* Owned by userproj/process.c and syscall.c. */
+    bool success;
+    int exit_error;
+    int waiting;
+    struct list children;
+    struct thread *parent;        
+    struct semaphore child_lock;  /* Mutex for child process. */
+
+    /* Shared between thread.c and userproj/syscall.c. */
+    struct child {
+      tid_t tid;              /* Thread identifier. */
+      bool used;              /* Used status. */
+      int exit_error;         /* Exited with error code. */
+      struct list_elem elem;  /* List element. */
+    };
+
+    /* Owned by filesys/file.c. */
+    struct file *self;
+    struct list files;
+    int fd_count;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
@@ -139,4 +164,11 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
+/* Mutex for file system. */
+struct lock filesys_lock;
+
+void acquire_filesys_lock();
+void release_filesys_lock();
+
+bool cmp_wktime(struct list_elem *first, struct list_elem *second, void *aux);
 #endif /* threads/thread.h */
