@@ -61,11 +61,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     check_addr(p + 1);
     check_addr(*(p + 1));
     acquire_filesys_lock();
-    // TODO: if -> bool
-    if (filesys_remove(*(p + 1)) == NULL)
-      f->eax = false;
-    else
-      f->eax = true;
+    f->eax = (filesys_remove(*(p + 1)) != NULL);
     release_filesys_lock();
     break;
 
@@ -172,9 +168,7 @@ int exec_proc(char *file_name) {
 
   acquire_filesys_lock();
 
-  // TODO: macros
-  char *fn_cp = malloc(strlen(file_name) + 1);
-  strlcpy(fn_cp, file_name, strlen(file_name) + 1);
+  char *fn_cp = strcpy2(file_name);
 
   char *save_ptr;
   fn_cp = strtok_r(fn_cp, " ", &save_ptr);

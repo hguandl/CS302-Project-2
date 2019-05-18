@@ -15,4 +15,6 @@ void process_activate (void);
         (elem) != NULL; \
         (elem) = strtok_r(NULL, (sep), (last)))
 
+char *strcpy2(const char *src);
+
 #endif /* userprog/process.h */

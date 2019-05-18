@@ -270,9 +270,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     goto done;
   process_activate ();
 
-  // TODO: macros
-  char *fn_cp = malloc(strlen(file_name) + 1);
-  strlcpy(fn_cp, file_name, strlen(file_name) + 1);
+  char *fn_cp = strcpy2(file_name);
 
   char *save_ptr;
   fn_cp = strtok_r(fn_cp, " ", &save_ptr);
@@ -501,15 +499,13 @@ setup_stack (void **esp, char *file_name)
         palloc_free_page (kpage);
     }
   char *token, *save_ptr;
-  int argc = 0, i;
-  // TODO: macros
-  char *copy = malloc(strlen(file_name) + 1);
-  strlcpy(copy, file_name, strlen(file_name) + 1);
+  int argc = 0;
+  char *copy = strcpy2(file_name);
   for_str(token, copy, " ", &save_ptr)
     argc++;
 
   int *argv = calloc(argc, sizeof(int));
-  i = 0;
+  int i = 0;
   for_str(token, file_name, " ", &save_ptr) {
     *esp -= strlen(token) + 1;
     memcpy(*esp, token, strlen(token) + 1);
@@ -567,4 +563,10 @@ install_page (void *upage, void *kpage, bool writable)
      address, then map our page there. */
   return (pagedir_get_page (t->pagedir, upage) == NULL
           && pagedir_set_page (t->pagedir, upage, kpage, writable));
+}
+
+char *strcpy2(const char *src) {
+  char *copy = malloc(strlen(src) + 1);
+  strlcpy(copy, src, strlen(src) + 1);
+  return copy;
 }
