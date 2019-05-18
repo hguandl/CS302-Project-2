@@ -109,9 +109,7 @@ process_wait (tid_t child_tid UNUSED)
   struct list_elem *e;
   struct child *chld = NULL;
   struct list_elem *el = NULL;
-  for (e = list_begin(&thread_current()->children);
-       e != list_end(&thread_current()->children);
-       e = list_next(e)) {
+  for_list(e, &thread_current()->children) {
     struct child *f = list_entry(e, struct child, elem);
     if (f->tid == child_tid) {
       chld = f;
