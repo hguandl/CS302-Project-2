@@ -1,0 +1,23 @@
+language: c
+os: linux
+dist: xenial
+
+addons:
+  apt:
+    packages:
+      - make
+      - gcc
+      - g++
+      - gdb
+
+# Install bochs
+install:
+    - "pushd bochs-2.6.7"
+    - "./configure --with-nogui --enable-gdb-stub"
+    - "sudo make install"
+    - "popd"
+
+script:
+  - "export PATH=$PATH:$PWD/src/utils"
+  - "pushd src/userprog"
+  - "make check"
