@@ -189,11 +189,7 @@ int exec_proc(char *file_name) {
 void exit_proc(int status) {
   struct list_elem *e;
 
-  // TODO: for -> while
-  for (e = list_begin(&thread_current()->parent->children);
-      e != list_end(&thread_current()->parent->children);
-      e = list_next(e))
-  {
+  for_list(e, &thread_current()->parent->children) {
     struct child *f = list_entry(e, struct child, elem);
     if (f->tid == thread_current()->tid) {
       f->used = true;
@@ -227,10 +223,7 @@ void *check_addr(const void *vaddr) {
 struct proc_file *list_search(struct list *files, int fd) {
   struct list_elem *e;
 
-  // TODO: while
-  for (e = list_begin(files);
-      e != list_end(files);
-      e = list_next(e)) {
+  for_list(e, files) {
     struct proc_file *f = list_entry(e, struct proc_file, elem);
     if (f->fd == fd)
       return f;
@@ -243,7 +236,7 @@ void close_file(struct list *files, int fd) {
   struct proc_file *f;
 
   // TODO: while macro
-  for (e = list_begin(files); e != list_end(files); e = list_next(e)) {
+  for_list(e, files) {
     f = list_entry(e, struct proc_file, elem);
     if (f->fd == fd) {
       file_close(f->ptr);

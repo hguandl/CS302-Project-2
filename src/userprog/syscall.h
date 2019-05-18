@@ -20,6 +20,9 @@ struct proc_file *list_search(struct list *files, int fd);
 void close_file(struct list *files, int fd);
 void close_all_files(struct list *files);
 
-extern bool running;
+#define for_list(var, list_ptr) \
+    for ((var) = list_begin(list_ptr); \
+        (var) != list_end(list_ptr); \
+        (var) = list_next(var))
 
 #endif /* userprog/syscall.h */
