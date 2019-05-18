@@ -519,26 +519,18 @@ setup_stack (void **esp, char *file_name)
     memcpy(*esp, &x, sizeof(char));
   }
 
-  int zero = 0;
+  push_stack_zero(esp);
 
-  // TODO: macros
-  *esp -= sizeof(int);
-  memcpy(*esp, &zero, sizeof(int));
-
-  for (i = argc - 1; i >= 0; i--) {
-    *esp -= sizeof(int);
-    memcpy(*esp, &argv[i], sizeof(int));
-  }
+  for (i = argc - 1; i >= 0; i--)
+    push_stack(esp, &argv[i], sizeof(int));
 
   int pt = *esp;
   *esp -= sizeof(int);
   memcpy(*esp, &pt, sizeof(int));
 
-  *esp -= sizeof(int);
-  memcpy(*esp, &argc, sizeof(int));
+  push_stack(esp, &argc, sizeof(int));
 
-  *esp -= sizeof(int);
-  memcpy(*esp, &zero, sizeof(int));
+  push_stack_zero(esp);
 
   free(copy);
   free(argv);
@@ -569,4 +561,14 @@ char *strcpy2(const char *src) {
   char *copy = malloc(strlen(src) + 1);
   strlcpy(copy, src, strlen(src) + 1);
   return copy;
+}
+
+void push_stack(void **esp, void *src, size_t size) {
+  *esp -= size;
+  memcpy(*esp, src, size);
+}
+
+void push_stack_zero(void **esp) {
+  *esp -= sizeof(int);
+  *(int *)*esp = 0;
 }

@@ -86,7 +86,6 @@ syscall_handler (struct intr_frame *f UNUSED)
   case SYS_FILESIZE:
     check_addr(p + 1);
     acquire_filesys_lock();
-    // TODO: use function to return
     f->eax = file_length(list_search(&thread_current()->files, *(p + 1))->ptr);
     release_filesys_lock();
     break;
@@ -235,7 +234,6 @@ void close_file(struct list *files, int fd) {
   struct list_elem *e;
   struct proc_file *f;
 
-  // TODO: while macro
   for_list(e, files) {
     f = list_entry(e, struct proc_file, elem);
     if (f->fd == fd) {
