@@ -53,6 +53,14 @@ syscall_handler (struct intr_frame *f UNUSED)
     check_addr(p + 5);
     check_addr(*(p + 4));
     acquire_filesys_lock();
+    f->eax = filesys_create(*(p + 4), *(p + 5));
+    release_filesys_lock();
+    break;
+
+  case SYS_REMOVE:
+    check_addr(p + 1);
+    check_addr(*(p + 1));
+    acquire_filesys_lock();
     // TODO: if -> bool
     if (filesys_remove(*(p + 1)) == NULL)
       f->eax = false;
@@ -154,8 +162,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 }
 
 int exec_proc(char *file_name) {
-  char *check = file_name;
+  check_addr(file_name);
 
+  char *check = file_name;
   while (*check) {
     check++;
     check_addr(check);
