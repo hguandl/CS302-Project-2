@@ -513,24 +513,19 @@ setup_stack (void **esp, char *file_name)
     i++;
   }
 
-  while ((int)*esp % 4 != 0) {
-    *esp -= sizeof(char);
-    char x = 0;
-    memcpy(*esp, &x, sizeof(char));
-  }
+  while ((int)*esp % 4 != 0)
+    push_stack_char(esp, 0);
 
-  push_stack_zero(esp);
+  push_stack_int(esp, 0);
 
   for (i = argc - 1; i >= 0; i--)
-    push_stack(esp, &argv[i], sizeof(int));
+    push_stack_int(esp, argv[i]);
 
-  int pt = *esp;
-  *esp -= sizeof(int);
-  memcpy(*esp, &pt, sizeof(int));
+  push_stack_int(esp, (int)*esp);
 
-  push_stack(esp, &argc, sizeof(int));
+  push_stack_int(esp, argc);
 
-  push_stack_zero(esp);
+  push_stack_int(esp, 0);
 
   free(copy);
   free(argv);
@@ -563,12 +558,12 @@ char *strcpy2(const char *src) {
   return copy;
 }
 
-void push_stack(void **esp, void *src, size_t size) {
-  *esp -= size;
-  memcpy(*esp, src, size);
+void push_stack_char(void **esp, char val) {
+  *esp -= sizeof(char);
+  *(char *)*esp = val;
 }
 
-void push_stack_zero(void **esp) {
+void push_stack_int(void **esp, int val) {
   *esp -= sizeof(int);
-  *(int *)*esp = 0;
+  *(int *)*esp = val;
 }

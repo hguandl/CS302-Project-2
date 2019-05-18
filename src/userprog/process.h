@@ -17,8 +17,7 @@ void process_activate (void);
 
 char *strcpy2(const char *src);
 
-void push_stack(void **esp, void *src, size_t size);
-
-void push_stack_zero(void **esp);
+void push_stack_int(void **esp, int val);
+void push_stack_char(void **esp, char val);
 
 #endif /* userprog/process.h */
