@@ -106,14 +106,6 @@ struct thread
     struct thread *parent;        
     struct semaphore child_lock;  /* Mutex for child process. */
 
-    /* Shared between thread.c and userproj/syscall.c. */
-    struct child {
-      tid_t tid;              /* Thread identifier. */
-      bool used;              /* Used status. */
-      int exit_error;         /* Exited with error code. */
-      struct list_elem elem;  /* List element. */
-    };
-
     /* Owned by filesys/file.c. */
     struct file *self;
     struct list files;
@@ -127,6 +119,14 @@ struct thread
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };
+
+/* Light-weight data structure for child thread. */
+struct child {
+  tid_t tid;              /* Thread identifier. */
+  bool used;              /* Used status. */
+  int exit_error;         /* Exited with error code. */
+  struct list_elem elem;  /* List element. */
+};
 
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
@@ -167,8 +167,8 @@ int thread_get_load_avg (void);
 /* Mutex for file system. */
 struct lock filesys_lock;
 
-void acquire_filesys_lock();
-void release_filesys_lock();
+void acquire_filesys_lock(void);
+void release_filesys_lock(void);
 
-bool cmp_wktime(struct list_elem *first, struct list_elem *second, void *aux);
+bool cmp_wktime(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
 #endif /* threads/thread.h */

@@ -7,6 +7,7 @@
 #include "threads/flags.h"
 #include "threads/interrupt.h"
 #include "threads/intr-stubs.h"
+#include "threads/malloc.h"
 #include "threads/palloc.h"
 #include "threads/switch.h"
 #include "threads/synch.h"
@@ -289,7 +290,7 @@ thread_tid (void)
 
 /* Deschedules the current thread and destroys it.  Never
    returns to the caller. */
-void
+NO_RETURN void
 thread_exit (void) 
 {
   ASSERT (!intr_context ());
@@ -297,7 +298,7 @@ thread_exit (void)
 #ifdef USERPROG
   process_exit ();
   while (!list_empty(&thread_current()->children)) {
-    struct process_file *f = list_entry(
+    struct child *f = list_entry(
       list_pop_front(&thread_current()->children),
       struct child, elem);
       free(f);
@@ -609,17 +610,17 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-void acquire_filesys_lock()
+void acquire_filesys_lock(void)
 {
   lock_acquire(&filesys_lock);
 }
 
-void release_filesys_lock()
+void release_filesys_lock(void)
 {
   lock_release(&filesys_lock);
 }
 
-bool cmp_wktime(struct list_elem *first, struct list_elem *second, void *aux)
+bool cmp_wktime(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
 {
   struct thread *a = list_entry(first, struct thread, elem);
   struct thread *b = list_entry(second, struct thread, elem);

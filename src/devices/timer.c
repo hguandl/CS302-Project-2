@@ -90,7 +90,6 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks) 
 {
-  int64_t start = timer_ticks ();
   struct thread *t;
   enum intr_level old_level;
 

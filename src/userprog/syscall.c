@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syscall-nr.h>
+#include "devices/input.h"
+#include "devices/shutdown.h"
+#include "threads/malloc.h"
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
@@ -40,8 +43,8 @@ syscall_handler (struct intr_frame *f UNUSED)
   case SYS_EXEC:
     check_addr(p + 1);
     check_addr(p + 2);
-    check_addr(*(p + 1));
-    f->eax = exec_proc(*(p + 1));
+    check_addr((void *)*(p + 1));
+    f->eax = exec_proc((char *)*(p + 1));
     break;
   
   case SYS_WAIT:
@@ -51,25 +54,25 @@ syscall_handler (struct intr_frame *f UNUSED)
   
   case SYS_CREATE:
     check_addr(p + 5);
-    check_addr(*(p + 4));
+    check_addr((void *)*(p + 4));
     acquire_filesys_lock();
-    f->eax = filesys_create(*(p + 4), *(p + 5));
+    f->eax = filesys_create((char *)*(p + 4), *(p + 5));
     release_filesys_lock();
     break;
 
   case SYS_REMOVE:
     check_addr(p + 1);
-    check_addr(*(p + 1));
+    check_addr((void *)*(p + 1));
     acquire_filesys_lock();
-    f->eax = (filesys_remove(*(p + 1)) != NULL);
+    f->eax = filesys_remove((char *)*(p + 1));
     release_filesys_lock();
     break;
 
   case SYS_OPEN:
     check_addr(p + 1);
-    check_addr(*(p + 1));
+    check_addr((void *)*(p + 1));
     acquire_filesys_lock();
-    struct file *fptr = filesys_open(*(p + 1));
+    struct file *fptr = filesys_open((char *)*(p + 1));
     release_filesys_lock();
     if (fptr == NULL)
       f->eax = -1;
@@ -92,11 +95,11 @@ syscall_handler (struct intr_frame *f UNUSED)
   
   case SYS_READ:
     check_addr(p + 7);
-    check_addr(*(p + 6));
+    check_addr((void *)*(p + 6));
     if (*(p + 5) == 0) {
-      uint8_t *buffer = *(p + 6);
+      uint8_t *buffer = (uint8_t *)*(p + 6);
       for (int i = 0; i < *(p + 7); i++) {
-        buffer[i] = input_getc();
+        buffer[i] = (char)input_getc();
       }
       f->eax = *(p + 7);
     } else {
@@ -105,7 +108,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         f->eax = -1;
       else {
         acquire_filesys_lock();
-        f->eax = file_read(fptr->ptr, *(p + 6), *(p + 7));
+        f->eax = file_read(fptr->ptr, (void *)*(p + 6), *(p + 7));
         release_filesys_lock();
       }
     }
@@ -113,9 +116,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   case SYS_WRITE:
     check_addr(p + 7);
-    check_addr(*(p + 6));
+    check_addr((void *)*(p + 6));
     if (*(p + 5) == 1) {
-      putbuf(*(p + 6), *(p + 7));
+      putbuf((char *)*(p + 6), *(p + 7));
       f->eax = *(p + 7);
     } else {
       struct proc_file *fptr = list_search(&thread_current()->files, *(p + 5));
@@ -123,7 +126,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         f->eax = -1;
       else {
         acquire_filesys_lock();
-        f->eax = file_write(fptr->ptr, *(p + 6), *(p + 7));
+        f->eax = file_write(fptr->ptr, (void *)*(p + 6), *(p + 7));
         release_filesys_lock();
       }
     }
@@ -151,7 +154,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     break;
   
   default:
-    exec_proc(-1);
+    exit_proc(-1);
     break;
   }
 }
@@ -232,7 +235,7 @@ struct proc_file *list_search(struct list *files, int fd) {
 
 void close_file(struct list *files, int fd) {
   struct list_elem *e;
-  struct proc_file *f;
+  struct proc_file *f = NULL;
 
   for_list(e, files) {
     f = list_entry(e, struct proc_file, elem);

@@ -14,6 +14,7 @@
 #include "threads/flags.h"
 #include "threads/init.h"
 #include "threads/interrupt.h"
+#include "threads/malloc.h"
 #include "threads/palloc.h"
 #include "threads/thread.h"
 #include "threads/vaddr.h"
@@ -106,8 +107,8 @@ int
 process_wait (tid_t child_tid UNUSED) 
 {
   struct list_elem *e;
-  struct child *chld;
-  struct list_elem *el;
+  struct child *chld = NULL;
+  struct list_elem *el = NULL;
   for (e = list_begin(&thread_current()->children);
        e != list_end(&thread_current()->children);
        e = list_next(e)) {
@@ -243,7 +244,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp, char *file_name);
+static bool setup_stack (void **esp, const char *file_name);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -484,7 +485,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp, char *file_name) 
+setup_stack (void **esp, const char *file_name) 
 {
   uint8_t *kpage;
   bool success = false;
@@ -501,15 +502,15 @@ setup_stack (void **esp, char *file_name)
   char *token, *save_ptr;
   int argc = 0;
   char *copy = strcpy2(file_name);
-  for_str(token, copy, " ", &save_ptr)
+  for_str(token, (char *)copy, " ", &save_ptr)
     argc++;
 
   int *argv = calloc(argc, sizeof(int));
   int i = 0;
-  for_str(token, file_name, " ", &save_ptr) {
+  for_str(token, (char *)file_name, " ", &save_ptr) {
     *esp -= strlen(token) + 1;
     memcpy(*esp, token, strlen(token) + 1);
-    argv[i] = *esp;
+    argv[i] = *(int *)esp;
     i++;
   }
 
