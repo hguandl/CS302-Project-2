@@ -167,8 +167,5 @@ int thread_get_load_avg (void);
 /* Mutex for file system. */
 struct lock filesys_lock;
 
-void acquire_filesys_lock(void);
-void release_filesys_lock(void);
-
 bool cmp_wktime(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED);
 #endif /* threads/thread.h */
