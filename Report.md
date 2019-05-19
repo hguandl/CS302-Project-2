@@ -6,11 +6,11 @@
 
 ##### 1.Summary
 
-We basically did the job together. Specifically, I (Yiwei) did  the main parts of modification on the `thread`, argument passing and the process syscall part and test-case-oriented debugging and I (Hao)  did the main parts of file syscall, reconstruct the code and left comments. The good thing is that we can pass all the tests while we believe the system is still not robust enough since what we did after finishing the skeleton is just for passing the tests we couldn't.
+We basically did the job together. Specifically, I (Yiwei) did the main parts of modification on the `thread`,  argument passing and test-case-oriented debugging and I (Hao) did the main parts of file syscall,  reconstruct the code and left comments. We did the process syscall part together. The good thing is that we can pass all the tests while we believe the system is still not robust enough since what we did after finishing the skeleton is just for passing the tests we couldn't.
 
 ##### 2.Memory
 
-The problems in the code related to the memory are mostly caused by the test cases which intentionally put the data range in dangerous area. For other situations we haven;t observed such problems.
+The problems in the code related to the memory are mostly caused by the test cases which intentionally put the data range in dangerous area. For other situations we haven't observed such problems.
 
 ##### 3. Style
 
@@ -44,12 +44,12 @@ No. We just use what the lib has given.
 
 ### Report on Each Task
 
-#### 1.Argument Parsing
+#### 1. Argument Parsing
 
 ##### Data structure and Function
 
 ```C
-//Mainly this function is modified
+// Mainly this function is modified
 static bool setup_stack (void **esp, const char *file_name);
 ```
 
@@ -109,7 +109,7 @@ Simply call `shut_down_power_off()`
 
 ###### Exec
 
-Call `process_execute()` to execute, before that `exec_proc()` will first check if the filename in the function argument exists and in `process_execute()`, a new thread is created through `thread_create()` and decreasing the semaphore of the current thread.
+Call `process_execute()` to execute, before that `exec_proc()` will first check whether the filename lies in the safe memory area and in `process_execute()`, a new thread is created through `thread_create()` and decreasing the semaphore of the current thread after we extract its name from `file_name` into `p_name`.
 
 ###### Exit
 
@@ -127,14 +127,14 @@ The semaphore operation has the most things to do with synchronization, however 
 
 ##### Rationale
 
-We decided to create a new struct to hold information about child processes that need to persist even after the child is terminated. Using the `child` struct and list child in `struct thread `  is also a good way to keep track of the child and parent .
+We decided to create a new struct to hold information about child processes . Using the `child` struct and list child in `struct thread `  is also a flexible way to keep track of the child and parent. It is lightweight with necessary pointers and frequently used flags, which make it convenient to access thread attributes and handle the fork stage of `SYS_EXEC`.
 
-#### 3.File Operation Syscalls
+#### 3. File Operation Syscalls
 
 ##### Data Structures and Functions
 
 ```c
-struct thread{
+struct thread {
     ...
     /* Owned by filesys/file.c. */
     struct file *self;
@@ -171,7 +171,7 @@ Before any operation, the `file_lock` should be acquired to ensure that no proce
 
 **Tell**: Simply call `file_tell()` for the current file's fd following the similar steps.
 
-**Close** : Call `file_close()` for the file and remove it from the file list of the current thread.
+**Close**: Call `file_close()` for the file and remove it from the file list of the current thread.
 
 ##### Synchronization
 
