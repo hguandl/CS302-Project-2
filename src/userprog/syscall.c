@@ -29,6 +29,8 @@ syscall_handler (struct intr_frame *f UNUSED)
   check_addr(p);
   uint8_t system_call = *(uint8_t *)p;
 
+  struct proc_file *pfile = NULL;
+
   switch (system_call)
   {
     case SYS_PRACTICE:
@@ -60,29 +62,29 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_CREATE:
       check_addr(p + 5);
       check_addr((void *)*(p + 4));
-      acquire_filesys_lock();
+      lock_acquire(&filesys_lock);
       f->eax = filesys_create((char *)*(p + 4), *(p + 5));
-      release_filesys_lock();
+      lock_release(&filesys_lock);
       break;
 
     case SYS_REMOVE:
       check_addr(p + 1);
       check_addr((void *)*(p + 1));
-      acquire_filesys_lock();
+      lock_acquire(&filesys_lock);
       f->eax = filesys_remove((char *)*(p + 1));
-      release_filesys_lock();
+      lock_release(&filesys_lock);
       break;
 
     case SYS_OPEN:
       check_addr(p + 1);
       check_addr((void *)*(p + 1));
-      acquire_filesys_lock();
+      lock_acquire(&filesys_lock);
       struct file *fptr = filesys_open((char *)*(p + 1));
-      release_filesys_lock();
+      lock_release(&filesys_lock);
       if (fptr == NULL)
         f->eax = -1;
       else {
-        struct proc_file *pfile = malloc(sizeof(*pfile));
+        pfile = malloc(sizeof(*pfile));
         pfile->ptr = fptr;
         pfile->fd = thread_current()->fd_count;
         thread_current()->fd_count++;
@@ -93,9 +95,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     case SYS_FILESIZE:
       check_addr(p + 1);
-      acquire_filesys_lock();
+      lock_acquire(&filesys_lock);
       f->eax = file_length(list_search(&thread_current()->files, *(p + 1))->ptr);
-      release_filesys_lock();
+      lock_release(&filesys_lock);
       break;
     
     case SYS_READ:
@@ -108,16 +110,16 @@ syscall_handler (struct intr_frame *f UNUSED)
         }
         f->eax = *(p + 7);
       } else {
-        struct proc_file *fptr = list_search(&thread_current()->files, *(p + 5));
-        if (fptr == NULL)
+        pfile = list_search(&thread_current()->files, *(p + 5));
+        if (pfile == NULL)
           f->eax = -1;
         else {
-          acquire_filesys_lock();
-          f->eax = file_read(fptr->ptr, (void *)*(p + 6), *(p + 7));
-          release_filesys_lock();
+          lock_acquire(&filesys_lock);
+          f->eax = file_read(pfile->ptr, (void *)*(p + 6), *(p + 7));
+          lock_release(&filesys_lock);
         }
       }
-        break;
+      break;
 
     case SYS_WRITE:
       check_addr(p + 7);
@@ -126,36 +128,44 @@ syscall_handler (struct intr_frame *f UNUSED)
         putbuf((char *)*(p + 6), *(p + 7));
         f->eax = *(p + 7);
       } else {
-        struct proc_file *fptr = list_search(&thread_current()->files, *(p + 5));
-        if (fptr == NULL)
+        pfile = list_search(&thread_current()->files, *(p + 5));
+        if (pfile == NULL)
           f->eax = -1;
         else {
-          acquire_filesys_lock();
-          f->eax = file_write(fptr->ptr, (void *)*(p + 6), *(p + 7));
-          release_filesys_lock();
+          lock_acquire(&filesys_lock);
+          f->eax = file_write(pfile->ptr, (void *)*(p + 6), *(p + 7));
+          lock_release(&filesys_lock);
         }
       }
       break;
 
     case SYS_SEEK:
       check_addr(p + 5);
-      acquire_filesys_lock();
-      file_seek(list_search(&thread_current()->files, *(p + 4))->ptr, *(p + 5));
-      release_filesys_lock();
+      pfile = list_search(&thread_current()->files, *(p + 4));
+      if (pfile) {
+        lock_acquire(&filesys_lock);
+        file_seek(pfile->ptr, *(p + 5));
+        lock_release(&filesys_lock);
+      } else
+        f->eax = -1;
       break;
 
     case SYS_TELL:
       check_addr(p + 1);
-      acquire_filesys_lock();
-      f->eax = file_tell(list_search(&thread_current()->files, *(p + 1))->ptr);
-      release_filesys_lock();
+      pfile = list_search(&thread_current()->files, *(p + 1));
+      if (pfile) {
+        lock_acquire(&filesys_lock);
+        f->eax = file_tell(pfile->ptr);
+        lock_release(&filesys_lock);
+      } else
+        f->eax = -1;
       break;
 
     case SYS_CLOSE:
       check_addr(p + 1);
-      acquire_filesys_lock();
+      lock_acquire(&filesys_lock);
       close_file(&thread_current()->files, *(p + 1));
-      release_filesys_lock();
+      lock_release(&filesys_lock);
       break;
     
     default:
@@ -173,7 +183,7 @@ int exec_proc(char *file_name) {
     check_addr(check);
   }
 
-  acquire_filesys_lock();
+  lock_acquire(&filesys_lock);
 
   char *fn_cp = strcpy2(file_name);
 
@@ -184,11 +194,11 @@ int exec_proc(char *file_name) {
   free(fn_cp);
 
   if (f == NULL) {
-    release_filesys_lock();
+    lock_release(&filesys_lock);
     return -1;
   } else {
     file_close(f);
-    release_filesys_lock();
+    lock_release(&filesys_lock);
     return process_execute(file_name);
   }
 }
