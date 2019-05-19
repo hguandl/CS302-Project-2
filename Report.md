@@ -109,7 +109,7 @@ Simply call `shut_down_power_off()`
 
 ###### Exec
 
-Call `process_execute()` to execute, before that ...... and in `process_execute()`, a new thread is created through `thread_create()` and decreasing the semaphore of the current thread.
+Call `process_execute()` to execute, before that `exec_proc()` will first check if the filename in the function argument exists and in `process_execute()`, a new thread is created through `thread_create()` and decreasing the semaphore of the current thread.
 
 ###### Exit
 
@@ -127,7 +127,7 @@ The semaphore operation has the most things to do with synchronization, however 
 
 ##### Rationale
 
-We decided to create a new struct to hold information about child processes that need to persist even after the child is terminated
+We decided to create a new struct to hold information about child processes that need to persist even after the child is terminated. Using the `child` struct and list child in `struct thread `  is also a good way to keep track of the child and parent .
 
 #### 3.File Operation Syscalls
 
