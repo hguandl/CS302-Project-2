@@ -610,16 +610,6 @@ allocate_tid (void)
    Used by switch.S, which can't figure it out on its own. */
 uint32_t thread_stack_ofs = offsetof (struct thread, stack);
 
-void acquire_filesys_lock(void)
-{
-  lock_acquire(&filesys_lock);
-}
-
-void release_filesys_lock(void)
-{
-  lock_release(&filesys_lock);
-}
-
 bool cmp_wktime(const struct list_elem *first, const struct list_elem *second, void *aux UNUSED)
 {
   struct thread *a = list_entry(first, struct thread, elem);
