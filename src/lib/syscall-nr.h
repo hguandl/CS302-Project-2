@@ -5,6 +5,7 @@
 enum 
   {
     /* Projects 2 and later. */
+    SYS_PRACTICE,               /* A fake system call for practice */
     SYS_HALT,                   /* Halt the operating system. */
     SYS_EXIT,                   /* Terminate this process. */
     SYS_EXEC,                   /* Start another process. */

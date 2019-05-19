@@ -186,7 +186,7 @@ thread_create (const char *name, int priority,
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
 
-  /* Handle fork() syscall. */
+  /* Fork for handling exec syscall. */
   struct child *c = malloc(sizeof(*c));
   c->tid = tid;
   c->exit_error = t->exit_error;
