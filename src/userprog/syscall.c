@@ -182,25 +182,8 @@ int exec_proc(char *file_name) {
     check++;
     check_addr(check);
   }
-
-  lock_acquire(&filesys_lock);
-
-  char *fn_cp = strcpy2(file_name);
-
-  char *save_ptr;
-  fn_cp = strtok_r(fn_cp, " ", &save_ptr);
-
-  struct file *f = filesys_open(fn_cp);
-  free(fn_cp);
-
-  if (f == NULL) {
-    lock_release(&filesys_lock);
-    return -1;
-  } else {
-    file_close(f);
-    lock_release(&filesys_lock);
-    return process_execute(file_name);
-  }
+  
+  return process_execute(file_name);
 }
 
 void exit_proc(int status) {
